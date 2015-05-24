@@ -1,8 +1,13 @@
 package com.example.xinliu.kwikd;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 
@@ -122,11 +127,14 @@ public class MapsActivity extends FragmentActivity implements
                 .position(latLng)
                 .title("I am here!");
         mMap.addMarker(options);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 12));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
     }
 
     @Override
     public void onConnected(Bundle bundle) {
+
+        checkEnableLocationSetting();
+
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (location == null) {
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
@@ -176,5 +184,32 @@ public class MapsActivity extends FragmentActivity implements
     public void onLocationChanged(Location location) {
         handleNewLocation(location);
         Log.v(TAG, "in onLocationChanged");
+    }
+
+    private void checkEnableLocationSetting() {
+        // Check if GPS or Network is enabled
+        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean isGPSEnabled = service.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        //boolean isNetworkEnabled = service.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+
+        // Check if enabled and if not send user to the GPS settings
+        if (!isGPSEnabled) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Enable Location Services")
+                    .setMessage("Do you want to enable the Location Services to continue?")
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                            startActivity(intent);
+                        }
+                    })
+                    .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            // do nothing
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        }
     }
 }
